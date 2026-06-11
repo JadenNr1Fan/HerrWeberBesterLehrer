@@ -3,6 +3,13 @@ from .models import SceneryImage
 
 
 class SceneryImageForm(forms.ModelForm):
+
     class Meta:
         model = SceneryImage
-        fields = ['title', 'image']
+
+        fields = [
+            'title',
+            'image',
+            'latitude',
+            'longitude'
+        ]
