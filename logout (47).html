@@ -1,0 +1,27 @@
+from django.db import models
+
+
+class SceneryImage(models.Model):
+    title = models.CharField(max_length=100)
+    origin = models.CharField(
+        max_length=120,
+        default="Switzerland",
+        help_text="Allgemeiner Ort, z. B. Zürich, Paris, Japan"
+    )
+    image = models.FileField(upload_to='scenery_images/')
+    latitude = models.FloatField(default=46.8182)
+    longitude = models.FloatField(default=8.2275)
+    likes = models.PositiveIntegerField(default=0)
+    dislikes = models.PositiveIntegerField(default=0)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def score(self):
+        return self.likes - self.dislikes
+
+    @property
+    def is_pdf(self):
+        return self.image.name.lower().endswith('.pdf')
+
+    def __str__(self):
+        return f"{self.title} - {self.origin}"
