@@ -28,6 +28,22 @@
             padding: 20px;
         }
 
+        form {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        button {
+            background: #2f5d50;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
         .gallery {
             display: flex;
             flex-wrap: wrap;
@@ -53,6 +69,7 @@
             height: 90px;
             object-fit: cover;
             margin: 5px;
+            border-radius: 6px;
         }
     </style>
 </head>
@@ -78,16 +95,13 @@
     <h2>Uploaded Images</h2>
 
     <div class="gallery">
-
         {% for img in images %}
-
-        <div class="card">
-            <img src="{{ img.image.url }}">
-            <p>{{ img.title }}</p>
-        </div>
-
+            <div class="card">
+                <img src="{{ img.image.url }}">
+                <h4>{{ img.title }}</h4>
+                <p>{{ img.origin }}</p>
+            </div>
         {% endfor %}
-
     </div>
 
 </div>
@@ -95,29 +109,57 @@
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
-
-    var map = L.map('map').setView([46.8182, 8.2275], 7);
+    var map = L.map('map').setView([20, 0], 2);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: 'OpenStreetMap'
     }).addTo(map);
 
-    var popupContent = `
-        <h3>Swiss Sceneries</h3>
+    var images = JSON.parse('{{ image_data_json|escapejs }}');
 
-        <div class="popup-gallery">
+    var groupedImages = {};
 
-            {% for img in images %}
-                <img src="{{ img.image.url }}">
-            {% endfor %}
+    images.forEach(function(img) {
+        if (!groupedImages[img.origin]) {
+            groupedImages[img.origin] = [];
+        }
 
-        </div>
-    `;
+        groupedImages[img.origin].push(img);
+    });
 
-    L.marker([46.8182, 8.2275])
-        .addTo(map)
-        .bindPopup(popupContent);
+    function addMarkerForPlace(origin, placeImages) {
+        fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(origin))
+            .then(response => response.json())
+            .then(data => {
+                if (data.length === 0) {
+                    return;
+                }
 
+                var lat = data[0].lat;
+                var lon = data[0].lon;
+
+                var popupContent = "<h3>" + origin + "</h3><div class='popup-gallery'>";
+
+                placeImages.forEach(function(img) {
+                    popupContent += `
+                        <div>
+                            <img src="${img.url}">
+                            <p>${img.title}</p>
+                        </div>
+                    `;
+                });
+
+                popupContent += "</div>";
+
+                L.marker([lat, lon])
+                    .addTo(map)
+                    .bindPopup(popupContent);
+            });
+    }
+
+    Object.keys(groupedImages).forEach(function(origin) {
+        addMarkerForPlace(origin, groupedImages[origin]);
+    });
 </script>
 
 </body>
